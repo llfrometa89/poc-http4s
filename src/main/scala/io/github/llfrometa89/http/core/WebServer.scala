@@ -8,7 +8,7 @@ import org.http4s.server.middleware.Logger
 
 object WebServer {
 
-  def stream[F[_]: ConcurrentEffect](implicit T: Timer[F], C: ContextShift[F]): Stream[F, Nothing] = {
+  def run[F[_]: ConcurrentEffect](implicit T: Timer[F], C: ContextShift[F]): Stream[F, Nothing] = {
     val httpApp = AccountController.routes[F].orNotFound
     val finalHttpApp = Logger.httpApp(logHeaders = true, logBody = true)(httpApp)
     BlazeServerBuilder[F]
