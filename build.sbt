@@ -4,21 +4,35 @@ version := "0.1"
 
 scalaVersion := "2.12.8"
 
+scalacOptions ++= Seq("-Ypartial-unification")
+
 lazy val V = new {
-  val cats                      = "1.5.0"
-  val catsEffect                = "1.0.0"
-  val logger4s                  = "0.3.1"
-  val scalatest                 = "3.0.0"
-  val monocleVersion            = "1.5.0"
-  val paradiseVersion           = "2.1.1"
+  val paradiseVersion = "2.1.1"
+  val http4sVersion   = "0.20.0-M6"
+  val circeVersion    = "0.11.1"
+  val logbackVersion  = "1.2.3"
+  val monocleVersion  = "1.5.0"
 }
 
-
 libraryDependencies ++= Seq(
-  "org.typelevel"                  %% "cats-core"        % V.cats,
-  "org.typelevel"                  %% "cats-effect"      % V.catsEffect,
-  "com.github.julien-truffaut"     %% "monocle-core"     % V.monocleVersion,
-  "com.github.julien-truffaut"     %% "monocle-macro"    % V.monocleVersion,
-  "org.pure4s"                     %% "logger4s-cats"    % V.logger4s,
+  "org.http4s"                 %% "http4s-blaze-server" % V.http4sVersion,
+  "org.http4s"                 %% "http4s-blaze-client" % V.http4sVersion,
+  "org.http4s"                 %% "http4s-circe"        % V.http4sVersion,
+  "org.http4s"                 %% "http4s-dsl"          % V.http4sVersion,
+  "io.circe"                   %% "circe-generic"       % V.circeVersion,
+  "ch.qos.logback"             % "logback-classic"      % V.logbackVersion,
+  "com.github.julien-truffaut" %% "monocle-core"        % V.monocleVersion,
+  "com.github.julien-truffaut" %% "monocle-macro"       % V.monocleVersion
 )
 addCompilerPlugin("org.scalamacros" % "paradise" % V.paradiseVersion cross CrossVersion.full)
+
+scalacOptions ++= Seq(
+  "-deprecation",
+  "-encoding",
+  "UTF-8",
+  "-language:higherKinds",
+  "-language:postfixOps",
+  "-feature",
+  "-Ypartial-unification",
+  "-Xfatal-warnings",
+)
