@@ -14,12 +14,12 @@ trait AccountAppServiceInstances {
 
   implicit def instance[F[_]: Sync: AccountService](implicit G: Generator[String]): AccountAppService[F] =
     new AccountAppService[F] {
-      override def open(req: CreateAccount.Request): F[Response] =
+      def open(req: CreateAccount.Request): F[Response] =
         for {
           accountNo <- G.generate.pure[F]
           account   <- AccountService[F].open(accountNo, req.name, req.amount, Savings)
         } yield AccountConverter.toDTO(account)
 
-      override def balance: F[Unit] = ???
+      def balance: F[Unit] = ???
     }
 }

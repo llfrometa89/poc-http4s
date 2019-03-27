@@ -3,7 +3,8 @@ package io.github.llfrometa89.http.controllers.v1
 import cats.effect.Sync
 import cats.implicits._
 import io.github.llfrometa89.application.dto.CreateAccount.AccountRequest
-import io.github.llfrometa89.application.services.AccountService
+//import io.github.llfrometa89.application.services.AccountService
+import io.github.llfrometa89.domain.services.AccountService
 import io.github.llfrometa89.http.controllers._
 import io.github.llfrometa89.http.core.Controller
 import org.http4s.HttpRoutes
@@ -18,14 +19,15 @@ class AccountController[F[_]: Sync: AccountService] extends Controller[F] {
 
     HttpRoutes.of[F] {
       case POST -> Root / ACCOUNTS =>
-        for {
-          account <- AccountService[F].open(AccountRequest("Livan Frometa", Some(200)))
-          resp    <- Ok(account)
-        } yield resp
+//        for {
+//          account <- AccountService[F].open(AccountRequest("Livan Frometa", Some(200)))
+//          resp    <- Ok(account)
+//        } yield resp
+        Ok(s"...............>>>accounts1")
 
       case GET -> Root / ACCOUNTS =>
-        val accounts = AccountService[F].balance
-        Ok(s"...............>>>accounts=$accounts")
+//        val accounts = AccountService[F].balance
+        Ok(s"...............>>>accounts2")
     }
   }
 }
