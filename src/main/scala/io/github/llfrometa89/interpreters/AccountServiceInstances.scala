@@ -71,5 +71,3 @@ trait AccountServiceInstances {
       }
     }
 }
-
-object AccountServiceInstances extends AccountServiceInstances

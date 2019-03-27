@@ -25,5 +25,3 @@ trait AccountRepositoryInstances {
       DB.memory.toList.map(_._2).pure[F]
   }
 }
-
-object AccountRepositoryInstances extends AccountRepositoryInstances
