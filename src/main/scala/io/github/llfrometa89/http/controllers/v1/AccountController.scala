@@ -5,12 +5,12 @@ import io.github.llfrometa89.domain.model.Savings
 import io.github.llfrometa89.domain.repositories.AccountRepository
 import io.github.llfrometa89.domain.services.AccountService
 import io.github.llfrometa89.http.core.Controller
-import org.http4s.HttpRoutes
-import org.http4s.dsl.Http4sDsl
 import io.github.llfrometa89.implicits._
 import io.github.llfrometa89.http.controllers._
+import org.http4s.HttpRoutes
+import org.http4s.dsl.Http4sDsl
 
-object AccountController extends Controller {
+class AccountController extends Controller {
 
   def routes[F[_]: Sync]: HttpRoutes[F] = {
 
