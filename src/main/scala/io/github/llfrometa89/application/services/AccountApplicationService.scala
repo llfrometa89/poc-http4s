@@ -17,8 +17,6 @@ object AccountApplicationService {
     for {
       accountNo <- G.generate.pure[F]
       account   <- AccountService[F].open(accountNo, req.name, req.email, req.amount, Savings)
-      _         <- AccountService[F].open("1234", req.name, req.email, req.amount, Savings)
-      _         <- AccountService[F].open("9876", req.name, req.email, req.amount, Savings)
       _         <- mailerWA.send(req.email, Map("name" -> req.name))
     } yield AccountConverter.toDTO(account)
 
