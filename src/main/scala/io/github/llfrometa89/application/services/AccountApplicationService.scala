@@ -1,6 +1,6 @@
 package io.github.llfrometa89.application.services
 
-import cats.{Applicative, Monad}
+import cats.Monad
 import cats.implicits._
 import io.github.llfrometa89.application.converters.AccountConverter
 import io.github.llfrometa89.application.dto.CreateAccount
