@@ -9,7 +9,7 @@ import org.http4s.circe.{jsonEncoderOf, jsonOf}
 
 object CreateAccount {
 
-  case class AccountRequest(name: String, amount: Option[Amount])
+  case class AccountRequest(name: String, email: String, amount: Option[Amount])
   object AccountRequest {
     implicit val accountRequestDecoder: Decoder[AccountRequest] = deriveDecoder[AccountRequest]
     implicit def accountRequestEntityDecoder[F[_]: Sync]: EntityDecoder[F, AccountRequest] = jsonOf

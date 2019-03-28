@@ -6,7 +6,7 @@ import cats.implicits._
 import io.github.llfrometa89.domain.model._
 
 trait AccountService[F[_]] {
-  def open(no: String, name: String, rate: Option[BigDecimal], accountType: AccountType): F[Account]
+  def open(no: String, name: String, email: String, rate: Option[BigDecimal], accountType: AccountType): F[Account]
   def close(no: String, closeDate: Date): F[Account]
   def debit(no: String, amount: Amount): F[Account]
   def credit(no: String, amount: Amount): F[Account]
