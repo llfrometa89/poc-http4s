@@ -3,7 +3,7 @@ package io.github.llfrometa89.http.core
 import cats.effect.Sync
 import org.http4s.HttpRoutes
 
-trait Controller[F[_]] {
+trait Controller {
 
-  def routes: HttpRoutes[F]
+  def routes[F[_]: Sync]: HttpRoutes[F]
 }
