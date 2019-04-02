@@ -19,16 +19,17 @@ object AccountController extends Controller {
     import dsl._
 
     HttpRoutes.of[F] {
-      case POST -> Root / ACCOUNTS =>
+      case req @ POST -> Root / ACCOUNTS =>
         for {
-          account <- AccountApplicationService.open[F](
-            AccountRequest("Livan Frometa", "example@example.com", Some(200)))
-          resp <- Ok(account)
+          accountRequest <- req.as[AccountRequest]
+          account        <- AccountApplicationService.open[F](accountRequest)
+          resp           <- Ok(account)
         } yield resp
-      case POST -> Root / ACCOUNTS / TRANSFER =>
+      case req @ POST -> Root / ACCOUNTS / TRANSFER =>
         for {
-          result <- AccountApplicationService.transfer[F](TransferRequest("1234", "9876", 100))
-          resp   <- Ok(result)
+          transferRequest <- req.as[TransferRequest]
+          result          <- AccountApplicationService.transfer[F](transferRequest)
+          resp            <- Ok(result)
         } yield resp
     }
   }
