@@ -12,6 +12,7 @@ lazy val V = new {
   val circeVersion    = "0.11.1"
   val logbackVersion  = "1.2.3"
   val monocleVersion  = "1.5.0"
+  val kindProjectorVersion = "0.9.9"
 }
 
 libraryDependencies ++= Seq(
@@ -22,7 +23,8 @@ libraryDependencies ++= Seq(
   "io.circe"                   %% "circe-generic"       % V.circeVersion,
   "ch.qos.logback"             % "logback-classic"      % V.logbackVersion,
   "com.github.julien-truffaut" %% "monocle-core"        % V.monocleVersion,
-  "com.github.julien-truffaut" %% "monocle-macro"       % V.monocleVersion
+  "com.github.julien-truffaut" %% "monocle-macro"       % V.monocleVersion,
+  compilerPlugin("org.spire-math" %% "kind-projector" % V.kindProjectorVersion)
 )
 addCompilerPlugin("org.scalamacros" % "paradise" % V.paradiseVersion cross CrossVersion.full)
 

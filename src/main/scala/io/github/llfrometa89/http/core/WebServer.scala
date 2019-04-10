@@ -14,7 +14,7 @@ object WebServer {
     val httpApp                     = AccountController.routes[F].orNotFound
     val httpAppWithLoggerMiddleware = Logger.httpApp(logHeaders = true, logBody = true)(httpApp)
     BlazeServerBuilder[F]
-      .bindHttp(9000, "0.0.0.0")
+      .bindHttp(9001, "0.0.0.0")
       .withHttpApp(httpAppWithLoggerMiddleware)
       .serve
   }.drain

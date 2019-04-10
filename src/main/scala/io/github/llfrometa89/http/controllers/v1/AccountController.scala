@@ -8,8 +8,12 @@ import io.github.llfrometa89.application.services.AccountApplicationService
 import io.github.llfrometa89.http.controllers._
 import io.github.llfrometa89.implicits._
 import io.github.llfrometa89.http.core.Controller
-import org.http4s.HttpRoutes
+import io.github.llfrometa89.http.middleware.RequestContext.RequestContextMiddleware
+import org.http4s.{AuthedService, BasicCredentials, HttpRoutes}
 import org.http4s.dsl.Http4sDsl
+import org.http4s.server.AuthMiddleware
+import org.http4s.server.middleware.authentication.BasicAuth
+import org.http4s.server.middleware.authentication.BasicAuth.BasicAuthenticator
 
 object AccountController extends Controller {
 
@@ -17,6 +21,26 @@ object AccountController extends Controller {
 
     val dsl = new Http4sDsl[F] {}
     import dsl._
+
+    val realm = "testrealm"
+
+    val authStore: BasicAuthenticator[F, String] = (creds: BasicCredentials) => {
+      if (creds.username == "username" && creds.password == "password")
+        Sync[F].pure(Some(creds.username))
+      else Sync[F].pure(None)
+    }
+
+    val basicAuth: AuthMiddleware[F, String] = BasicAuth(realm, authStore)
+
+    def authRoutes: HttpRoutes[F] =
+      basicAuth(AuthedService[String, F] {
+        case GET -> Root / "protected" as user =>
+          Ok(s"This page is protected using HTTP authentication; logged in as $user")
+      })
+
+    val rcRoute: RequestContextMiddleware[F, String] = BasicAuth(realm, authStore)
+
+    def requestContext: HttpRoutes[F] = ???
 
     HttpRoutes.of[F] {
       case req @ POST -> Root / ACCOUNTS =>
@@ -31,6 +55,6 @@ object AccountController extends Controller {
           result          <- AccountApplicationService.transfer[F](transferRequest)
           resp            <- Ok(result)
         } yield resp
-    }
+    } <+> authRoutes <+> requestContext
   }
 }
