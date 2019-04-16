@@ -8,7 +8,8 @@ import io.github.llfrometa89.application.services.AccountApplicationService
 import io.github.llfrometa89.http.controllers._
 import io.github.llfrometa89.implicits._
 import io.github.llfrometa89.http.core.Controller
-import io.github.llfrometa89.http.middleware.RequestContext.RequestContextMiddleware
+import io.github.llfrometa89.http.middleware.BasicAuth111
+import io.github.llfrometa89.http.middleware.RequestContext.AuthMiddleware111
 import org.http4s.{AuthedService, BasicCredentials, HttpRoutes}
 import org.http4s.dsl.Http4sDsl
 import org.http4s.server.AuthMiddleware
@@ -38,9 +39,13 @@ object AccountController extends Controller {
           Ok(s"This page is protected using HTTP authentication; logged in as $user")
       })
 
-    val rcRoute: RequestContextMiddleware[F, String] = BasicAuth(realm, authStore)
+    val basicAuth111: AuthMiddleware111[F, String] = BasicAuth111()
 
-    def requestContext: HttpRoutes[F] = ???
+    def authRoutes111: HttpRoutes[F] =
+      basicAuth111(AuthedService[String, F] {
+        case GET -> Root / "protected2" as user =>
+          Ok(s".........>>>> as $user")
+      })
 
     HttpRoutes.of[F] {
       case req @ POST -> Root / ACCOUNTS =>
@@ -55,6 +60,6 @@ object AccountController extends Controller {
           result          <- AccountApplicationService.transfer[F](transferRequest)
           resp            <- Ok(result)
         } yield resp
-    } <+> authRoutes <+> requestContext
+    } <+> authRoutes <+> authRoutes111
   }
 }
