@@ -9,7 +9,7 @@ import io.github.llfrometa89.http.controllers._
 import io.github.llfrometa89.implicits._
 import io.github.llfrometa89.http.core.Controller
 import io.github.llfrometa89.http.middleware.{BasicAuth111, RequestContext}
-import io.github.llfrometa89.http.middleware.RequestContext.AuthMiddleware111
+import io.github.llfrometa89.http.middleware.RequestContext.RequestContextMiddleware
 import org.http4s.{AuthedService, BasicCredentials, HttpRoutes}
 import org.http4s.dsl.Http4sDsl
 import org.http4s.server.AuthMiddleware
@@ -39,7 +39,7 @@ object AccountController extends Controller {
           Ok(s"This page is protected using HTTP authentication; logged in as $user")
       })
 
-    val basicAuth111: AuthMiddleware111[F, RequestContext] = BasicAuth111()
+    val basicAuth111: RequestContextMiddleware[F, RequestContext] = BasicAuth111()
 
     def authRoutes111: HttpRoutes[F] =
       basicAuth111(

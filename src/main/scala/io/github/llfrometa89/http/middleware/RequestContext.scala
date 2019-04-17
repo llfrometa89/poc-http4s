@@ -8,15 +8,14 @@ import org.http4s.headers.{`WWW-Authenticate`, Authorization}
 import org.http4s.server.Middleware
 import org.http4s.util.CaseInsensitiveString
 import org.http4s.{AuthedRequest, AuthedService, BasicCredentials, Challenge, HttpRoutes, Request, Response, Status}
-import io.circe.syntax._
 import io.circe.{Decoder, Encoder, HCursor, Json}
-import io.circe._, io.circe.parser._
+import io.circe.parser._
 
 case class RequestContext(platform: String)
 
 object RequestContext {
 
-  type AuthMiddleware111[F[_], T] =
+  type RequestContextMiddleware[F[_], T] =
     Middleware[OptionT[F, ?], AuthedRequest[F, T], Response[F], Request[F], Response[F]]
 
   implicit val encodeFoo = new Encoder[RequestContext] {
@@ -41,7 +40,7 @@ object BasicAuth111 {
 
   type BasicAuthenticator111[F[_], A] = BasicCredentials => F[Option[A]]
 
-  def apply[F[_]: Sync, A](): AuthMiddleware111[F, A] =
+  def apply[F[_]: Sync, A](): RequestContextMiddleware[F, A] =
     challenged(challenge)
 
   def challenge[F[_]: Applicative, A]: Kleisli[F, Request[F], Either[Challenge, AuthedRequest[F, A]]] =
@@ -52,11 +51,6 @@ object BasicAuth111 {
             .flatMap(_.as[RequestContext])
             .map(AuthedRequest(_, req))
             .asInstanceOf[Either[Challenge, AuthedRequest[F, A]]]
-//          match {
-//            case Left(failure) => println(s"Invalid JSON :($failure)")
-//            case Right(rcObject) =>
-//              println(s".............>>>>>>>>>>>>>>> rcObject.as[RequestContext] = $rcObject")
-//          }
         case _ => Left(Challenge("Basic", "22222", Map.empty))
       }
       println(s".............>>>>>>>>>>>>>>> resp = $resp")
