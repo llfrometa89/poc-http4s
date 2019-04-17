@@ -4,13 +4,13 @@ import cats.Applicative
 import cats.data.{Kleisli, OptionT}
 import cats.effect.Sync
 import cats.implicits._
-import io.circe.Decoder.Result
 import org.http4s.headers.{`WWW-Authenticate`, Authorization}
 import org.http4s.server.Middleware
 import org.http4s.util.CaseInsensitiveString
 import org.http4s.{AuthedRequest, AuthedService, BasicCredentials, Challenge, HttpRoutes, Request, Response, Status}
 import io.circe.syntax._
 import io.circe.{Decoder, Encoder, HCursor, Json}
+import io.circe._, io.circe.parser._
 
 case class RequestContext(platform: String)
 
@@ -46,23 +46,23 @@ object BasicAuth111 {
 
   def challenge[F[_]: Applicative, A]: Kleisli[F, Request[F], Either[Challenge, AuthedRequest[F, A]]] =
     Kleisli { req =>
-      println(s".............>>>>>>>>>>>>>>> req = ${req.headers}")
-      println(s".............>>>>>>>>>>>>>>> req = ${req.headers.get(CaseInsensitiveString(`X-Request-Context`))}")
-
-      req.headers.get(CaseInsensitiveString(`X-Request-Context`)) match {
+      val resp = req.headers.get(CaseInsensitiveString(`X-Request-Context`)) match {
         case Some(rcValue) =>
-          val rcObject = rcValue.value.asJson.as[RequestContext]
-          println(s".............>>>>>>>>>>>>>>> rcObject.asJson = ${rcValue.value.asJson}")
-          println(s".............>>>>>>>>>>>>>>> rcObject = $rcObject")
-
+          parse(rcValue.value)
+            .flatMap(_.as[RequestContext])
+            .map(AuthedRequest(_, req))
+            .asInstanceOf[Either[Challenge, AuthedRequest[F, A]]]
+//          match {
+//            case Left(failure) => println(s"Invalid JSON :($failure)")
+//            case Right(rcObject) =>
+//              println(s".............>>>>>>>>>>>>>>> rcObject.as[RequestContext] = $rcObject")
+//          }
         case _ => Left(Challenge("Basic", "22222", Map.empty))
       }
-//      validatePassword(validate, req).map {
-//        case Some(authInfo) =>
-      Right(AuthedRequest("1we", req)).asInstanceOf[Either[Challenge, AuthedRequest[F, A]]].pure[F]
-//        case None =>
-//          Left(Challenge("Basic", realm, Map.empty))
-//      }
+      println(s".............>>>>>>>>>>>>>>> resp = $resp")
+
+      resp.pure[F]
+//      Right(AuthedRequest("1we", req)).asInstanceOf[Either[Challenge, AuthedRequest[F, A]]].pure[F]
     }
 
   def challenged[F[_], A](challenge: Kleisli[F, Request[F], Either[Challenge, AuthedRequest[F, A]]])(
@@ -73,8 +73,11 @@ object BasicAuth111 {
         .run(req)
         .flatMap {
           case Right(authedRequest) =>
+            println(s".............>>>>>>>>>>>>>>> authedRequest = $authedRequest")
+
             routes(authedRequest)
           case Left(challenge) =>
+            println(s".............>>>>>>>>>>>>>>> challenge = $challenge")
             OptionT.some(Response(Status.Unauthorized).putHeaders(`WWW-Authenticate`(challenge)))
         }
     }

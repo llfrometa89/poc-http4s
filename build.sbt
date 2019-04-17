@@ -21,6 +21,7 @@ libraryDependencies ++= Seq(
   "org.http4s"                 %% "http4s-circe"        % V.http4sVersion,
   "org.http4s"                 %% "http4s-dsl"          % V.http4sVersion,
   "io.circe"                   %% "circe-generic"       % V.circeVersion,
+  "io.circe"                   %% "circe-parser"        % V.circeVersion,
   "ch.qos.logback"             % "logback-classic"      % V.logbackVersion,
   "com.github.julien-truffaut" %% "monocle-core"        % V.monocleVersion,
   "com.github.julien-truffaut" %% "monocle-macro"       % V.monocleVersion,
