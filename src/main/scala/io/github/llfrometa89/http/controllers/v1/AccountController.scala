@@ -8,7 +8,7 @@ import io.github.llfrometa89.application.services.AccountApplicationService
 import io.github.llfrometa89.http.controllers._
 import io.github.llfrometa89.implicits._
 import io.github.llfrometa89.http.core.Controller
-import io.github.llfrometa89.http.middleware.{BasicAuth111, RequestContext}
+import io.github.llfrometa89.http.middleware.{Auth111, AuthedService111, RequestContext, RequestContextInterceptor}
 import io.github.llfrometa89.http.middleware.RequestContext.RequestContextMiddleware
 import org.http4s.{AuthedService, BasicCredentials, HttpRoutes}
 import org.http4s.dsl.Http4sDsl
@@ -16,22 +16,22 @@ import org.http4s.server.AuthMiddleware
 import org.http4s.server.middleware.authentication.BasicAuth
 import org.http4s.server.middleware.authentication.BasicAuth.BasicAuthenticator
 
+trait Http4sDsl111[F[_]] extends Http4sDsl[F] with Auth111
+
 object AccountController extends Controller {
 
   def routes[F[_]: Sync]: HttpRoutes[F] = {
 
-    val dsl = new Http4sDsl[F] {}
+    val dsl = new Http4sDsl111[F] {}
     import dsl._
 
-    val realm = "testrealm"
-
-    val authStore: BasicAuthenticator[F, String] = (creds: BasicCredentials) => {
-      if (creds.username == "username" && creds.password == "password")
-        Sync[F].pure(Some(creds.username))
+    val authStore: BasicAuthenticator[F, String] = (creds: BasicCredentials) =>
+      if (creds.username == "username" && creds.password == "password") Sync[F].pure(Some(creds.username))
       else Sync[F].pure(None)
-    }
 
-    val basicAuth: AuthMiddleware[F, String] = BasicAuth(realm, authStore)
+    val basicAuth: AuthMiddleware[F, String] = BasicAuth("realm.example.com", authStore)
+
+    val requestContext: RequestContextMiddleware[F, RequestContext] = RequestContextInterceptor()
 
     def authRoutes: HttpRoutes[F] =
       basicAuth(AuthedService[String, F] {
@@ -39,16 +39,13 @@ object AccountController extends Controller {
           Ok(s"This page is protected using HTTP authentication; logged in as $user")
       })
 
-    val basicAuth111: RequestContextMiddleware[F, RequestContext] = BasicAuth111()
+    def requestContextRoutes: HttpRoutes[F] = requestContext(
+      AuthedService111[RequestContext, F] {
+        case GET -> Root / "protected2" as111 rc => Ok(s".........>>>>  rc = $rc")
+      }
+    )
 
-    def authRoutes111: HttpRoutes[F] =
-      basicAuth111(
-        AuthedService[RequestContext, F] {
-          case GET -> Root / "protected2" as requestContext => Ok(s".........>>>> requestContext = $requestContext")
-        }
-      )
-
-    HttpRoutes.of[F] {
+    val defaultRoutes = HttpRoutes.of[F] {
       case req @ POST -> Root / ACCOUNTS =>
         for {
           accountRequest <- req.as[AccountRequest]
@@ -61,6 +58,8 @@ object AccountController extends Controller {
           result          <- AccountApplicationService.transfer[F](transferRequest)
           resp            <- Ok(result)
         } yield resp
-    } <+> authRoutes <+> authRoutes111
+    }
+
+    defaultRoutes <+> authRoutes <+> requestContextRoutes
   }
 }
