@@ -6,7 +6,7 @@ import cats.implicits._
 import cats.{Applicative, Functor}
 import io.circe.parser._
 import io.circe.{Decoder, Encoder, HCursor, Json}
-import io.github.llfrometa89.http.middleware.AuthedService111.AuthedService111
+import io.github.llfrometa89.http.middleware.RequestContext.RequestContextService
 import org.http4s.server.Middleware
 import org.http4s.util.CaseInsensitiveString
 import org.http4s.{BasicCredentials, HttpRoutes, Request, Response, Status}
@@ -15,8 +15,10 @@ case class RequestContext(platform: String)
 
 object RequestContext {
 
+  type RequestContextService[T, F[_]] = Kleisli[OptionT[F, ?], RequestContextServiceInterRequest[F, T], Response[F]]
+
   type RequestContextMiddleware[F[_], T] =
-    Middleware[OptionT[F, ?], AuthedRequest111[F, T], Response[F], Request[F], Response[F]]
+    Middleware[OptionT[F, ?], RequestContextServiceInterRequest[F, T], Response[F], Request[F], Response[F]]
 
   implicit val encodeFoo = new Encoder[RequestContext] {
     final def apply(a: RequestContext): Json = Json.obj(
@@ -47,59 +49,51 @@ object RequestContextInterceptor {
   def apply[F[_]: Sync, A](): RequestContextMiddleware[F, A] =
     challenged(challenge)
 
-  def challenge[F[_]: Applicative, A]: Kleisli[F, Request[F], Either[RequestContextMessages, AuthedRequest111[F, A]]] =
+  def challenge[F[_]: Applicative, A]: Kleisli[F, Request[F], Either[RequestContextMessages, RequestContextServiceInterRequest[F, A]]] =
     Kleisli { req =>
       val resp = req.headers.get(CaseInsensitiveString(`X-Request-Context`)) match {
         case Some(rcValue) =>
           parse(rcValue.value)
             .flatMap(_.as[RequestContext])
-            .map(AuthedRequest111(_, req))
-            .asInstanceOf[Either[RequestContextMessages, AuthedRequest111[F, A]]]
+            .map(RequestContextServiceInterRequest(_, req))
+            .asInstanceOf[Either[RequestContextMessages, RequestContextServiceInterRequest[F, A]]]
         case _ => Left(RequestContextMissing)
       }
-      println(s".............>>>>>>>>>>>>>>> resp = $resp")
 
       resp.pure[F]
     }
 
-  def challenged[F[_], A](challenge: Kleisli[F, Request[F], Either[RequestContextMessages, AuthedRequest111[F, A]]])(
-      routes: AuthedService111[A, F])(implicit F: Sync[F]): HttpRoutes[F] =
+  def challenged[F[_], A](challenge: Kleisli[F, Request[F], Either[RequestContextMessages, RequestContextServiceInterRequest[F, A]]])(
+      routes: RequestContextService[A, F])(implicit F: Sync[F]): HttpRoutes[F] =
     Kleisli { req =>
       challenge
         .mapF(OptionT.liftF(_))
         .run(req)
         .flatMap {
-          case Right(authedRequest) =>
-            println(s".............>>>>>>>>>>>>>>> authedRequest = $authedRequest")
-
-            routes(authedRequest)
-          case Left(challenge) =>
-            println(s".............>>>>>>>>>>>>>>> challenge = $challenge")
-            OptionT.some(Response(Status.BadRequest))
+          case Right(rcRequest) => routes(rcRequest)
+          case Left(_) => OptionT.some(Response(Status.BadRequest))
         }
     }
 }
 
-final case class AuthedRequest111[F[_], A](authInfo: A, req: Request[F])
+final case class RequestContextServiceInterRequest[F[_], A](authInfo: A, req: Request[F])
 
-object AuthedRequest111 {
-  def apply[F[_]: Functor, T](getUser: Request[F] => F[T]): Kleisli[F, Request[F], AuthedRequest111[F, T]] =
-    Kleisli(request => getUser(request).map(user => AuthedRequest111(user, request)))
+object RequestContextServiceInterRequest {
+  def apply[F[_]: Functor, T](getUser: Request[F] => F[T]): Kleisli[F, Request[F], RequestContextServiceInterRequest[F, T]] =
+    Kleisli(request => getUser(request).map(user => RequestContextServiceInterRequest(user, request)))
 }
 
-object AuthedService111 {
+object RequestContextService {
 
-  type AuthedService111[T, F[_]] = Kleisli[OptionT[F, ?], AuthedRequest111[F, T], Response[F]]
-
-  def apply[T, F[_]](pf: PartialFunction[AuthedRequest111[F, T], F[Response[F]]])(
-      implicit F: Applicative[F]): AuthedService111[T, F] =
+  def apply[T, F[_]](pf: PartialFunction[RequestContextServiceInterRequest[F, T], F[Response[F]]])(
+      implicit F: Applicative[F]): RequestContextService[T, F] =
     Kleisli(req => pf.andThen(OptionT.liftF(_)).applyOrElse(req, Function.const(OptionT.none)))
 
 }
 
-trait Auth111 {
-  object as111 {
-    def unapply[F[_], A](ar: AuthedRequest111[F, A]): Option[(Request[F], A)] =
+trait RequestContextOps {
+  object asRequestContext {
+    def unapply[F[_], A](ar: RequestContextServiceInterRequest[F, A]): Option[(Request[F], A)] =
       Some(ar.req -> ar.authInfo)
   }
 }
