@@ -9,9 +9,10 @@ import io.circe.{Decoder, Encoder, HCursor, Json}
 import io.github.llfrometa89.http.middleware.RequestContext.RequestContextService
 import org.http4s.server.Middleware
 import org.http4s.util.CaseInsensitiveString
-import org.http4s.{BasicCredentials, HttpRoutes, Request, Response, Status}
+import org.http4s.{HttpRoutes, Request, Response, Status}
 
-case class RequestContext(platform: String)
+
+case class RequestContext(platform: String, platformCountry: String, userId: Option[String], clientId: Option[String])
 
 object RequestContext {
 
@@ -20,18 +21,25 @@ object RequestContext {
   type RequestContextMiddleware[F[_], T] =
     Middleware[OptionT[F, ?], RequestContextServiceInterRequest[F, T], Response[F], Request[F], Response[F]]
 
-  implicit val encodeFoo = new Encoder[RequestContext] {
+  def unapply[F[_], A](ar: RequestContextServiceInterRequest[F, A]): Option[(Request[F], A)] =
+    Some(ar.req -> ar.rcInfo)
+
+  implicit val encodeRequestContext = new Encoder[RequestContext] {
     final def apply(a: RequestContext): Json = Json.obj(
-      ("platform", Json.fromString(a.platform))
+      ("platform", Json.fromString(a.platform)),
+      ("platform_country", Json.fromString(a.platformCountry)),
+      ("user_id", Json.fromString(a.platformCountry)),
+      ("client_id", Json.fromString(a.platformCountry))
     )
   }
-  implicit val decodeFoo = new Decoder[RequestContext] {
+  implicit val decodeRequestContext = new Decoder[RequestContext] {
     final def apply(c: HCursor): Decoder.Result[RequestContext] =
       for {
-        platform <- c.downField("platform").as[String]
-      } yield {
-        new RequestContext(platform)
-      }
+        platform        <- c.downField("platform").as[String]
+        platformCountry <- c.downField("platform_country").as[String]
+        userId          <- c.downField("user_id").as[Option[String]]
+        clientId        <- c.downField("client_id").as[Option[String]]
+      } yield RequestContext(platform, platformCountry, userId, clientId)
   }
 }
 
@@ -43,8 +51,6 @@ object RequestContextInterceptor {
   import RequestContext._
 
   val `X-Request-Context` = "X-Request-Context"
-
-  type BasicAuthenticator111[F[_], A] = BasicCredentials => F[Option[A]]
 
   def apply[F[_]: Sync, A](): RequestContextMiddleware[F, A] =
     challenged(challenge)
@@ -63,7 +69,8 @@ object RequestContextInterceptor {
       resp.pure[F]
     }
 
-  def challenged[F[_], A](challenge: Kleisli[F, Request[F], Either[RequestContextMessages, RequestContextServiceInterRequest[F, A]]])(
+  def challenged[F[_], A](
+      challenge: Kleisli[F, Request[F], Either[RequestContextMessages, RequestContextServiceInterRequest[F, A]]])(
       routes: RequestContextService[A, F])(implicit F: Sync[F]): HttpRoutes[F] =
     Kleisli { req =>
       challenge
@@ -71,15 +78,16 @@ object RequestContextInterceptor {
         .run(req)
         .flatMap {
           case Right(rcRequest) => routes(rcRequest)
-          case Left(_) => OptionT.some(Response(Status.BadRequest))
+          case Left(_)          => OptionT.some(Response(Status.BadRequest))
         }
     }
 }
 
-final case class RequestContextServiceInterRequest[F[_], A](authInfo: A, req: Request[F])
+final case class RequestContextServiceInterRequest[F[_], A](rcInfo: A, req: Request[F])
 
 object RequestContextServiceInterRequest {
-  def apply[F[_]: Functor, T](getUser: Request[F] => F[T]): Kleisli[F, Request[F], RequestContextServiceInterRequest[F, T]] =
+  def apply[F[_]: Functor, T](
+      getUser: Request[F] => F[T]): Kleisli[F, Request[F], RequestContextServiceInterRequest[F, T]] =
     Kleisli(request => getUser(request).map(user => RequestContextServiceInterRequest(user, request)))
 }
 
@@ -91,9 +99,7 @@ object RequestContextService {
 
 }
 
-trait RequestContextOps {
-  object asRequestContext {
-    def unapply[F[_], A](ar: RequestContextServiceInterRequest[F, A]): Option[(Request[F], A)] =
-      Some(ar.req -> ar.authInfo)
-  }
-}
+//object asRequestContext {
+//  def unapply[F[_], A](ar: RequestContextServiceInterRequest[F, A]): Option[(Request[F], A)] =
+//    Some(ar.req -> ar.authInfo)
+//}

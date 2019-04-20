@@ -8,25 +8,23 @@ import io.github.llfrometa89.application.services.AccountApplicationService
 import io.github.llfrometa89.http.controllers._
 import io.github.llfrometa89.http.core.Controller
 import io.github.llfrometa89.http.middleware.RequestContext.RequestContextMiddleware
-import io.github.llfrometa89.http.middleware.{RequestContext, RequestContextInterceptor, RequestContextOps, RequestContextService}
+import io.github.llfrometa89.http.middleware.{RequestContext, RequestContextInterceptor, RequestContextService}
 import io.github.llfrometa89.implicits._
 import org.http4s.HttpRoutes
 import org.http4s.dsl.Http4sDsl
-
-trait Http4sDslWithRequestContext[F[_]] extends Http4sDsl[F] with RequestContextOps
 
 object AccountController extends Controller {
 
   def routes[F[_]: Sync]: HttpRoutes[F] = {
 
-    val dsl = new Http4sDslWithRequestContext[F] {}
+    val dsl = new Http4sDsl[F] {}
     import dsl._
 
     val requestContext: RequestContextMiddleware[F, RequestContext] = RequestContextInterceptor()
 
     def requestContextRoutes: HttpRoutes[F] = requestContext(
       RequestContextService[RequestContext, F] {
-        case GET -> Root / "protected2" asRequestContext rc => Ok(s"this is rc = $rc")
+        case GET -> Root / "protected2" RequestContext rc => Ok(s"this is rc = $rc")
       }
     )
 
