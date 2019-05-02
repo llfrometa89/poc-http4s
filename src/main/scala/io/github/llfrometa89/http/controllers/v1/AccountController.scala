@@ -12,6 +12,7 @@ import io.github.llfrometa89.http.middleware.{RequestContext, RequestContextInte
 import io.github.llfrometa89.implicits._
 import org.http4s.HttpRoutes
 import org.http4s.dsl.Http4sDsl
+import io.github.llfrometa89.http.middleware.RequestContext._
 
 object AccountController extends Controller {
 
@@ -24,7 +25,7 @@ object AccountController extends Controller {
 
     def requestContextRoutes: HttpRoutes[F] = requestContext(
       RequestContextService[RequestContext, F] {
-        case GET -> Root / "protected2" RequestContext rc => Ok(s"this is rc = $rc")
+        case GET -> Root / "protected2" asRequestContext rc => Ok(s"this is rc = $rc")
       }
     )
 

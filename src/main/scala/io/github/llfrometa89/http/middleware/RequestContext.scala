@@ -21,8 +21,8 @@ object RequestContext {
   type RequestContextMiddleware[F[_], T] =
     Middleware[OptionT[F, ?], RequestContextServiceInterRequest[F, T], Response[F], Request[F], Response[F]]
 
-  def unapply[F[_], A](ar: RequestContextServiceInterRequest[F, A]): Option[(Request[F], A)] =
-    Some(ar.req -> ar.rcInfo)
+//  def unapply[F[_], A](ar: RequestContextServiceInterRequest[F, A]): Option[(Request[F], A)] =
+//    Some(ar.req -> ar.rcInfo)
 
   implicit val encodeRequestContext = new Encoder[RequestContext] {
     final def apply(a: RequestContext): Json = Json.obj(
@@ -41,6 +41,12 @@ object RequestContext {
         clientId        <- c.downField("client_id").as[Option[String]]
       } yield RequestContext(platform, platformCountry, userId, clientId)
   }
+
+  object asRequestContext {
+    def unapply[F[_], A](ar: RequestContextServiceInterRequest[F, A]): Option[(Request[F], A)] =
+      Some(ar.req -> ar.rcInfo)
+  }
+
 }
 
 trait RequestContextMessages
@@ -98,8 +104,3 @@ object RequestContextService {
     Kleisli(req => pf.andThen(OptionT.liftF(_)).applyOrElse(req, Function.const(OptionT.none)))
 
 }
-
-//object asRequestContext {
-//  def unapply[F[_], A](ar: RequestContextServiceInterRequest[F, A]): Option[(Request[F], A)] =
-//    Some(ar.req -> ar.authInfo)
-//}
