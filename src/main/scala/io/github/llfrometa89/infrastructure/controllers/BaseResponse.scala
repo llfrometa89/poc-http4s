@@ -1,4 +1,4 @@
-package io.github.llfrometa89.http.core
+package io.github.llfrometa89.infrastructure.controllers
 
 case class BaseResponse[T, M](data: T, messages: Option[M])
 

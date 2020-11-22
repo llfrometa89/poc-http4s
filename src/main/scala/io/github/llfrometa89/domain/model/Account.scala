@@ -35,6 +35,10 @@ sealed trait Account {
 
 object Account {
 
+  sealed abstract class AccountError(error: String) extends Exception(error)
+  case class AlreadyExistAccount(no: String)        extends AccountError(s"Already existing account with no $no")
+  case class NotFoundAccount(no: String)            extends AccountError(s"Not found account with no $no")
+
   def validate(
       no: String,
       name: String,
