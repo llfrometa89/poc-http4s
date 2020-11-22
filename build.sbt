@@ -1,4 +1,4 @@
-name := "http4s_testing"
+name := "poc-http4s"
 
 version := "0.1"
 
