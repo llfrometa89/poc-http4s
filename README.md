@@ -1,4 +1,4 @@
-# http4s example
+# poc-http4s
 
 ## Prerequisites
 To follow this **Readme** you need to have installed: [cURL](https://curl.haxx.se/) or [HTTPie](https://httpie.org/)
